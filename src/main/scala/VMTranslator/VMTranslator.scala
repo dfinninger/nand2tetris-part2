@@ -13,4 +13,7 @@ object VMTranslator extends App {
     printUsage()
     System.exit(1)
   }
+
+  val commands = Parser.parse(args(0))
+  println(commands)
 }
