@@ -1,5 +1,8 @@
 package VMTranslator
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
+
 object VMTranslator extends App {
   private def printUsage(): Unit =
     println(
@@ -15,5 +18,8 @@ object VMTranslator extends App {
   }
 
   val commands = Parser.parse(args(0))
-  println(commands)
+  val writer = new Writer(commands)
+
+  val outFile = args(0).replace(".vm", ".asm")
+  Files.write(Paths.get(outFile), writer.render().getBytes(StandardCharsets.UTF_8))
 }
