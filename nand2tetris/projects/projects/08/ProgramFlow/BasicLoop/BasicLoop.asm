@@ -1,4 +1,5 @@
-// Push(constant,0)
+// Sun Sep 27 15:03:42 PDT 2020
+// == Push(constant,0) ==
 @0
 D=A
 @SP
@@ -6,7 +7,7 @@ A=M
 M=D
 @SP
 M=M+1
-// Pop(local,0)
+// == Pop(local,0) ==
 @LCL // accessing memory segment
 D=M
 @0
@@ -22,9 +23,9 @@ D=M
 @R13 // store D into
 A=M  // address saved in
 M=D  // REG_13
-// Label(LOOP_START)
-(Xxx.LOOP_START)
-// Push(argument,0)
+// == Label(LOOP_START) ==
+(default.default$LOOP_START)
+// == Push(argument,0) ==
 @ARG // accessing memory segment
 D=M
 @0
@@ -35,7 +36,7 @@ A=M
 M=D
 @SP
 M=M+1
-// Push(local,0)
+// == Push(local,0) ==
 @LCL // accessing memory segment
 D=M
 @0
@@ -46,7 +47,7 @@ A=M
 M=D
 @SP
 M=M+1
-// Arithmetic(add)
+// == Arithmetic(add) ==
 @SP
 M=M-1
 A=M
@@ -57,7 +58,7 @@ A=M
 M=M+D
 @SP
 M=M+1
-// Pop(local,0)
+// == Pop(local,0) ==
 @LCL // accessing memory segment
 D=M
 @0
@@ -73,7 +74,7 @@ D=M
 @R13 // store D into
 A=M  // address saved in
 M=D  // REG_13
-// Push(argument,0)
+// == Push(argument,0) ==
 @ARG // accessing memory segment
 D=M
 @0
@@ -84,7 +85,7 @@ A=M
 M=D
 @SP
 M=M+1
-// Push(constant,1)
+// == Push(constant,1) ==
 @1
 D=A
 @SP
@@ -92,7 +93,7 @@ A=M
 M=D
 @SP
 M=M+1
-// Arithmetic(sub)
+// == Arithmetic(sub) ==
 @SP
 M=M-1
 A=M
@@ -103,7 +104,7 @@ A=M
 M=M-D
 @SP
 M=M+1
-// Pop(argument,0)
+// == Pop(argument,0) ==
 @ARG // accessing memory segment
 D=M
 @0
@@ -119,7 +120,7 @@ D=M
 @R13 // store D into
 A=M  // address saved in
 M=D  // REG_13
-// Push(argument,0)
+// == Push(argument,0) ==
 @ARG // accessing memory segment
 D=M
 @0
@@ -130,15 +131,15 @@ A=M
 M=D
 @SP
 M=M+1
-// IfGoto(LOOP_START)
+// == IfGoto(LOOP_START) ==
 @SP
 M=M-1
 @SP
 A=M
 D=M
-@Xxx.LOOP_START
+@default.default$LOOP_START
 D;JNE
-// Push(local,0)
+// == Push(local,0) ==
 @LCL // accessing memory segment
 D=M
 @0

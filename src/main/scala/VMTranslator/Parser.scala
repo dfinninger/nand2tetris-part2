@@ -1,5 +1,7 @@
 package VMTranslator
 
+import jdk.nashorn.internal.ir.ReturnNode
+
 import scala.annotation.tailrec
 import scala.io.Source
 
@@ -47,14 +49,17 @@ object Parser {
       if (trimHead == "" || trimHead.startsWith("//")) parse(tail, commands)
       else {
         // The first word of a line is the command, the rest being arguments to the command
-        val parts = trimHead.split(" ")
+        val parts = for (item <- trimHead.split(" ")) yield item.trim
         val newCommand = parts(0) match {
-          case "push" => Push(parts(1), parts(2).trim.toInt)
-          case "pop" => Pop(parts(1), parts(2).trim.toInt)
+          case "push" => Push(parts(1), parts(2).toInt)
+          case "pop" => Pop(parts(1), parts(2).toInt)
           case "add" | "sub" | "neg" | "eq" | "gt" | "lt" | "and" | "or" | "not" => Arithmetic(parts(0))
           case "label" => Label(parts(1))
           case "goto" => Goto(parts(1))
           case "if-goto" => IfGoto(parts(1))
+          case "function" => Function(parts(1), parts(2).toInt)
+          case "call" => Call(parts(1), parts(2).toInt)
+          case "return" => Return()
           case _ => throw new RuntimeException(s"Unknown command: ${parts(0)}")
         }
 

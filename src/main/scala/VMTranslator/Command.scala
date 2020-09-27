@@ -24,3 +24,12 @@ case class Goto(label: String) extends Command
 
 /** Conditionally jump to a label */
 case class IfGoto(label: String) extends Command
+
+/** Define a function start */
+case class Function(name: String, argCount: Int) extends Command
+
+/** Call a function */
+case class Call(name: String, varCount: Int) extends Command
+
+/** Return from a function */
+case class Return() extends Command

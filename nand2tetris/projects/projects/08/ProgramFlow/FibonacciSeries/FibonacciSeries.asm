@@ -120,7 +120,7 @@ D=M
 A=M  // address saved in
 M=D  // REG_13
 // Label(MAIN_LOOP_START)
-(Xxx.MAIN_LOOP_START)
+(default.default$MAIN_LOOP_START)
 // Push(argument,0)
 @ARG // accessing memory segment
 D=M
@@ -138,13 +138,13 @@ M=M-1
 @SP
 A=M
 D=M
-@Xxx.COMPUTE_ELEMENT
+@default.default$COMPUTE_ELEMENT
 D;JNE
 // Goto(END_PROGRAM)
-@Xxx.END_PROGRAM
+@default.default$END_PROGRAM
 0;JMP
 // Label(COMPUTE_ELEMENT)
-(Xxx.COMPUTE_ELEMENT)
+(default.default$COMPUTE_ELEMENT)
 // Push(that,0)
 @THAT // accessing memory segment
 D=M
@@ -287,7 +287,7 @@ D=M
 A=M  // address saved in
 M=D  // REG_13
 // Goto(MAIN_LOOP_START)
-@Xxx.MAIN_LOOP_START
+@default.default$MAIN_LOOP_START
 0;JMP
 // Label(END_PROGRAM)
-(Xxx.END_PROGRAM)
+(default.default$END_PROGRAM)

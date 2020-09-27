@@ -12,8 +12,12 @@ class Writer(commands: List[Command]) {
   private val TRUE = -1 // 0xFFFF
   private val FALSE = 0 // 0x0000
   private val REG_13 = "R13"
+  private val REG_RETURN = "R14"
+  private val REG_FRAME = "R7"
 
   private var jumpCounter = 0 // keep track of the number of jumps so that we can generate unique labels
+  private var namespace = "default" // keep track of the current filename
+  private var function = "default" // keep track of the current function
 
   /** Render the list of [[Command]]s into a String of Machine Code
    *
@@ -21,7 +25,7 @@ class Writer(commands: List[Command]) {
    */
   def render(): String = {
     commands.map(cmd => {
-      val comment = s"// $cmd"
+      val comment = s"// == $cmd =="
       val result = cmd match {
         // Arithmetic / Logical Commands
         case Arithmetic("add") => cmdArithmeticDualArgOp("+")
@@ -44,6 +48,11 @@ class Writer(commands: List[Command]) {
         case Label(label) => cmdLabel(label)
         case Goto(label) => cmdGoto(label)
         case IfGoto(label) => cmdIfGoto(label)
+
+        // Function Commands
+        case Function(name, varCount) => cmdFunction(name, varCount)
+        case Call(name, argCount) => cmdCall(name, argCount)
+        case Return() => cmdReturn()
 
         case _ => throw new RuntimeException("unable to assemble command")
       }
@@ -240,8 +249,126 @@ class Writer(commands: List[Command]) {
        |""".stripMargin
   }
 
+  /** Create a function entrypoint
+   *
+   * @param name     the name of the function
+   * @param varCount number of local variables for the function
+   * @return ML representing the start of a function
+   */
+  def cmdFunction(name: String, varCount: Int): String = {
+    val initializeLocals = for (i <- 0 until varCount) yield
+      s"""
+         |${pushValueToStack("0")}
+         |""".stripMargin
+
+    s"""
+       |($name)
+       |${initializeLocals.mkString("\n")}
+       |""".stripMargin
+  }
+
+  /** Create a function call
+   *
+   * @param name     the name of the function to call
+   * @param argCount the number of arguments to pass to the function
+   * @return ML implementing a function call
+   */
+  def cmdCall(name: String, argCount: Int): String = {
+    jumpCounter += 1
+    val returnLabel = makeLabel(jumpCounter.toString)
+
+    s"""
+       |${pushValueToStack(returnLabel)}
+       |${pushSegmentToStack("LCL")}
+       |${pushSegmentToStack("ARG")}
+       |${pushSegmentToStack("THIS")}
+       |${pushSegmentToStack("THAT")}
+       |
+       |// ARG = SP-n-5
+       |@SP
+       |D=M
+       |@$argCount
+       |D=D-A
+       |@5
+       |D=D-A
+       |@ARG
+       |M=D
+       |
+       |// LCL = SP
+       |@SP
+       |D=M
+       |@LCL
+       |M=D
+       |
+       |// goto f
+       |@$name
+       |0;JMP
+       |
+       |($returnLabel)
+       |""".stripMargin
+  }
+
+  /** Generate a function's return */
+  def cmdReturn(): String = {
+    s"""
+       |// FRAME = LCL
+       |@LCL
+       |D=M
+       |@$REG_FRAME
+       |M=D
+       |
+       |// RET = *(FRAME-5)
+       |@5
+       |A=D-A
+       |D=M
+       |@$REG_RETURN
+       |M=D
+       |
+       |// *ARG = pop()
+       |$popStackToD
+       |@ARG
+       |A=M
+       |M=D
+       |
+       |// SP = ARG+1
+       |@ARG
+       |D=M
+       |@SP
+       |M=D+1
+       |
+       |// THAT = *(FRAME-1)
+       |${indirectValueToD("FRAME", 1)}
+       |@THAT
+       |M=D
+       |
+       |// THIS = *(FRAME-2)
+       |${indirectValueToD("FRAME", 2)}
+       |@THIS
+       |M=D
+       |
+       |// ARG = *(FRAME-3)
+       |${indirectValueToD("FRAME", 3)}
+       |@ARG
+       |M=D
+       |
+       |// LCL = *(FRAME-4)
+       |${indirectValueToD("FRAME", 4)}
+       |@LCL
+       |M=D
+       |
+       |// goto RET
+       |@$REG_RETURN
+       |A=M
+       |0;JMP
+       |""".stripMargin
+  }
+
+
   /** Make a label name */
-  def makeLabel(label: String): String = s"Xxx.$label"
+  def makeLabel(label: String): String = s"$namespace.$function$$$label"
+
+  /** Make a label that defines a function start */
+  def makeFunctionLabel(label: String): String = s"$namespace.$label"
 
   /** Point M to a named section of Memory
    *
@@ -264,13 +391,47 @@ class Writer(commands: List[Command]) {
        |""".stripMargin
   }
 
-  def pushConstant(num: Int): String =
+  /** push an integer onto the stack */
+  def pushValueToStack(value: String): String =
     s"""
-       |@$num
+       |@$value
        |D=A
        |$accessTopOfStack
        |M=D
        |$incrementStackPointer
+       |""".stripMargin
+
+  /** Push a memory segment onto the stack
+   *
+   * Call with "LCL" to save the value of @LCL onto the stack, etc.
+   *
+   * @param segment the value to push onto the stack
+   * @return ML for pushing a literal value onto the stack
+   */
+  def pushSegmentToStack(segment: String): String =
+    s"""
+       |@$segment
+       |D=M
+       |$accessTopOfStack
+       |M=D
+       |$incrementStackPointer
+       |""".stripMargin
+
+  /** Load the indirect value from address into the D register
+   *
+   * This function performs: `D=*(address-offset)`
+   *
+   * @param address the address to use as a pointer, can be a label
+   * @param offset  pointer decrement you want to preform before access, e.g. *(address-1)
+   * @return ML representing a pointer access
+   */
+  def indirectValueToD(address: String, offset: Int): String =
+    s"""
+       |@$REG_FRAME
+       |D=M
+       |@$offset
+       |A=D-A // subtract offset
+       |D=M   // load pointer value into D
        |""".stripMargin
 
   /** decrement the stack pointer */
@@ -293,6 +454,14 @@ class Writer(commands: List[Command]) {
       |A=M
       |D=M
       |""".stripMargin
+
+  /** pop the top of the stack into D */
+  private val popStackToD: String =
+    s"""
+       |// pop stack into D
+       |$decrementStackPointer
+       |$loadPointerValue
+       |""".stripMargin
 
   /** get M to point to the top of the stack */
   private val accessTopOfStack: String =
