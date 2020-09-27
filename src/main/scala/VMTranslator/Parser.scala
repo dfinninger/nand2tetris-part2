@@ -30,7 +30,7 @@ object Parser {
    *
    * This is most commonly called by the other `parse` method that takes a filename.
    *
-   * @param lines list of string that comprise the lines of an input file
+   * @param lines    list of string that comprise the lines of an input file
    * @param commands the currently-accumulated list of commands (empty list for a new parse)
    * @return a list of commands generated from the initial input `lines` list
    */
@@ -49,9 +49,12 @@ object Parser {
         // The first word of a line is the command, the rest being arguments to the command
         val parts = trimHead.split(" ")
         val newCommand = parts(0) match {
-          case "push" => Push(parts(1), parts(2).toInt)
-          case "pop" => Pop(parts(1), parts(2).toInt)
+          case "push" => Push(parts(1), parts(2).trim.toInt)
+          case "pop" => Pop(parts(1), parts(2).trim.toInt)
           case "add" | "sub" | "neg" | "eq" | "gt" | "lt" | "and" | "or" | "not" => Arithmetic(parts(0))
+          case "label" => Label(parts(1))
+          case "goto" => Goto(parts(1))
+          case "if-goto" => IfGoto(parts(1))
           case _ => throw new RuntimeException(s"Unknown command: ${parts(0)}")
         }
 

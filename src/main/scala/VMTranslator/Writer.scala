@@ -40,6 +40,11 @@ class Writer(commands: List[Command]) {
         case Push(segment, offset) => cmdPush(segment, offset)
         case Pop(segment, offset) => cmdPop(segment, offset)
 
+        // Program Flow Commands
+        case Label(label) => cmdLabel(label)
+        case Goto(label) => cmdGoto(label)
+        case IfGoto(label) => cmdIfGoto(label)
+
         case _ => throw new RuntimeException("unable to assemble command")
       }
       comment + "\n" + result
@@ -194,6 +199,49 @@ class Writer(commands: List[Command]) {
       case "static" => popStatic(offset)
     }
   }
+
+  /** Create a label with the given name, label
+   *
+   * @param label name of the label to create
+   * @return ML that creates a new Label
+   */
+  def cmdLabel(label: String): String = {
+    s"""
+       |(${makeLabel(label)})
+       |""".stripMargin
+  }
+
+  /** Create a Goto statement that unconditionally jumps to a given label
+   *
+   * @param label the name of the label to jump to
+   * @return ML defining an unconditional jump
+   */
+  def cmdGoto(label: String): String = {
+    s"""
+       |@${makeLabel(label)}
+       |0;JMP
+       |""".stripMargin
+  }
+
+  /** Create a conditional Goto statement
+   *
+   * The condition for jumping is the previous stack entry. If 0, don't jump. Anything else, jump.
+   *
+   * @param label name of the label to jump to
+   * @return ML defining a conditional jump
+   */
+  def cmdIfGoto(label: String): String = {
+    s"""
+       |$decrementStackPointer
+       |$accessTopOfStack
+       |D=M
+       |@${makeLabel(label)}
+       |D;JNE
+       |""".stripMargin
+  }
+
+  /** Make a label name */
+  def makeLabel(label: String): String = s"Xxx.$label"
 
   /** Point M to a named section of Memory
    *

@@ -15,3 +15,12 @@ case class Push(stack: String, index: Int) extends Command
 
 /** Pop an item from a stack */
 case class Pop(stack: String, index: Int) extends Command
+
+/** Create a new label */
+case class Label(label: String) extends Command
+
+/** Jump to a label */
+case class Goto(label: String) extends Command
+
+/** Conditionally jump to a label */
+case class IfGoto(label: String) extends Command
