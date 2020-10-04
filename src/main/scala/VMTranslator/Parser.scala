@@ -49,7 +49,7 @@ object Parser {
       if (trimHead == "" || trimHead.startsWith("//")) parse(tail, commands)
       else {
         // The first word of a line is the command, the rest being arguments to the command
-        val parts = for (item <- trimHead.split(" ")) yield item.trim
+        val parts = for (item <- trimHead.split("\\s+")) yield item.trim
         val newCommand = parts(0) match {
           case "push" => Push(parts(1), parts(2).toInt)
           case "pop" => Pop(parts(1), parts(2).toInt)

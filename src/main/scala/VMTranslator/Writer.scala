@@ -8,7 +8,7 @@ package VMTranslator
  * - access:          Manipulates registers such that the "M" register points to the correct memory value
  * - {inc,dec}rement: Manipulate the specified pointer and leave the updated address in the "A" register
  */
-class Writer(commands: List[Command]) {
+class Writer(commands: List[Command], namespace: String) {
   private val TRUE = -1 // 0xFFFF
   private val FALSE = 0 // 0x0000
   private val REG_13 = "R13"
@@ -16,7 +16,6 @@ class Writer(commands: List[Command]) {
   private val REG_FRAME = "R7"
 
   private var jumpCounter = 0 // keep track of the number of jumps so that we can generate unique labels
-  private var namespace = "default" // keep track of the current filename
   private var function = "default" // keep track of the current function
 
   /** Render the list of [[Command]]s into a String of Machine Code
@@ -59,6 +58,19 @@ class Writer(commands: List[Command]) {
       comment + "\n" + result
     }).mkString.replaceAll("\n+", "\n")
   }
+
+  def initialization(): String =
+    s"""
+       |// initialize
+       |@256
+       |D=A
+       |@SP
+       |M=D
+       |
+       |${cmdCall("Sys.init", 0)}
+       |// end initialization
+       |
+       |""".stripMargin
 
   /** Generate ML for a one-argument operation and store the result on the stack
    *
@@ -135,7 +147,7 @@ class Writer(commands: List[Command]) {
 
     def pushStatic(num: Int): String =
       s"""
-         |@Xxx.$num
+         |@$namespace.$num
          |D=M
          |$accessTopOfStack
          |M=D
@@ -193,7 +205,7 @@ class Writer(commands: List[Command]) {
          |$accessTopOfStack
          |D=M
          |
-         |@Xxx.$num
+         |@$namespace.$num
          |M=D
          |""".stripMargin
 
@@ -256,6 +268,7 @@ class Writer(commands: List[Command]) {
    * @return ML representing the start of a function
    */
   def cmdFunction(name: String, varCount: Int): String = {
+    function = name // set the new function name
     val initializeLocals = for (i <- 0 until varCount) yield
       s"""
          |${pushValueToStack("0")}

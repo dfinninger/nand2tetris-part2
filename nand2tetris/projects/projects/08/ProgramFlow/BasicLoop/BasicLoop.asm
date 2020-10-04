@@ -1,4 +1,4 @@
-// Sun Sep 27 15:03:42 PDT 2020
+// Sun Oct 04 12:07:11 PDT 2020
 // == Push(constant,0) ==
 @0
 D=A
@@ -24,7 +24,7 @@ D=M
 A=M  // address saved in
 M=D  // REG_13
 // == Label(LOOP_START) ==
-(default.default$LOOP_START)
+(BasicLoop.default$LOOP_START)
 // == Push(argument,0) ==
 @ARG // accessing memory segment
 D=M
@@ -137,7 +137,7 @@ M=M-1
 @SP
 A=M
 D=M
-@default.default$LOOP_START
+@BasicLoop.default$LOOP_START
 D;JNE
 // == Push(local,0) ==
 @LCL // accessing memory segment
